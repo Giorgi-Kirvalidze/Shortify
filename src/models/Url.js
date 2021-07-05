@@ -19,9 +19,14 @@ const schema = new Schema({
         required: true,
         default: 0,
     },
-    user: { type: Schema.Types.ObjectId, ref: 'User' },
+    uniqueClick: {
+        type: Number,
+        required: true,
+        default: 0
+    },
+    clickedByUsers: [{ type: Schema.Types.ObjectId, ref: 'User' }],
 
-    createdByIp: { String },
+    createdByIp: { type: String },
 
     date: {
         type: String,

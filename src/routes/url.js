@@ -4,7 +4,7 @@ const shortid = require('shortid')
 const { isUrl } = require('../utils/validateUrl')
 const Url = require('../models/Url')
 
-router.post('/shorten', async (req, res) => {
+router.post('/shorten/', async (req, res) => {
     const { originUrl } = req.body
     const base = process.env.BASE_URL
 
@@ -22,7 +22,7 @@ router.post('/shorten', async (req, res) => {
                     shortUrl,
                     urlId,
                     date: new Date(),
-                    createdByIp: ipAddress
+                    createdByIp: ipAddress,
                 })
                 await url.save()
                 res.json(url)
@@ -39,7 +39,14 @@ router.get('/:urlId', async (req, res) => {
     try {
         const url = await Url.findOne({ urlId: req.params.urlId });
         if (url) {
+            if (url.clickedByUsers.includes(req.params.userId)) {
+                url.clicks++
+                await url.save()
+                return res.redirect(url.originUrl);
+            }
+            url.clickedByUsers.push(req.params.userId)
             url.clicks++;
+            url.uniqueClick++
             await url.save();
             return res.redirect(url.originUrl);
         } else res.status(404).json('Not found');
