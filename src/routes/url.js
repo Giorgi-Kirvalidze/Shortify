@@ -3,9 +3,10 @@ const router = express.Router()
 const shortid = require('shortid')
 const { isUrl } = require('../utils/validateUrl')
 const Url = require('../models/Url')
+const User = require('../models/User')
 
 router.post('/shorten/', async (req, res) => {
-    const { originUrl } = req.body
+    const { originUrl, id } = req.body
     const base = process.env.BASE_URL
 
     const urlId = shortid.generate()
@@ -18,11 +19,13 @@ router.post('/shorten/', async (req, res) => {
                 const ipAddress = req.ip;
                 const shortUrl = `${base}/api/url/${urlId}`
                 url = new Url({
+                    user: id,
                     originUrl,
                     shortUrl,
                     urlId,
                     date: new Date(),
                     createdByIp: ipAddress,
+
                 })
                 await url.save()
                 res.json(url)
@@ -38,13 +41,21 @@ router.post('/shorten/', async (req, res) => {
 router.get('/:urlId', async (req, res) => {
     try {
         const url = await Url.findOne({ urlId: req.params.urlId });
+        const clickedByUser = url.user
+        const user = await User.findOne({ _id: clickedByUser })
+        if (user) {
+            if (!user.linksVisited.includes(url.shortUrl)) {
+                user.linksVisited.push(url.shortUrl)
+                await user.save()
+            }
+        }
         if (url) {
-            if (url.clickedByUsers.includes(req.params.userId)) {
+            if (url.clickedByUsers.includes(clickedByUser)) {
                 url.clicks++
                 await url.save()
                 return res.redirect(url.originUrl);
             }
-            url.clickedByUsers.push(req.params.userId)
+            url.clickedByUsers.push(clickedByUser)
             url.clicks++;
             url.uniqueClick++
             await url.save();

@@ -27,6 +27,11 @@ const schema = new Schema({
     clickedByUsers: [{ type: Schema.Types.ObjectId, ref: 'User' }],
 
     createdByIp: { type: String },
+    user: {
+        type: mongoose.Schema.ObjectId,
+        ref: 'User',
+        required: true
+    },
 
     date: {
         type: String,
